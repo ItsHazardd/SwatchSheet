@@ -1,20 +1,26 @@
 # Putting out a new version
 
-The app's updater reads the newest release on GitHub, so every release needs these exact pieces.
+Releases are made automatically by GitHub (the "Release" workflow in `.github/workflows`).
 
-1. Make sure `VERSION` has the new number (for example `1.1.5`).
-2. Double-click `build.cmd`. It runs the tests and stops if any fail. It makes:
-   - `SwatchSheet-1.1.5.zip`: the program and README, ready to send.
-   - `SwatchSheet-1.1.5.zip.sha256`: the fingerprint the updater checks.
-3. On GitHub, open **Releases**, then **Draft a new release**.
-4. **Tag:** `v1.1.5` (a v, then the exact number from `VERSION`). Target: `main`.
-5. **Title:** `Swatch Sheet 1.1.5`. In the description, write a few lines on what changed.
-6. **Attach both files** from step 2: the zip AND the .sha256. Without the fingerprint file, the
-   updater ignores the release on purpose.
-7. Leave "Set as a pre-release" unticked, then click **Publish release**.
+1. Change `VERSION` to the new number (for example `1.1.5`).
+2. Add a `## 1.1.5` section at the top of `CHANGES.md` saying what changed. That text becomes
+   the release notes.
+3. Commit and push to `main`.
+
+GitHub then checks whether `v1.1.5` already exists. If not, it runs the tests, builds the
+program, zips it, makes its fingerprint file and publishes the release with both attached.
+It takes a few minutes. Watch it in the **Actions** tab: a green tick means it's out, a red
+cross means something failed and nothing was released (GitHub also emails you).
+
+Pushes that don't change `VERSION` don't make a release, so small fixes to docs are safe.
 
 Within a day, every copy that has update checks on sees the new version. Anyone can also click
 the version number in the bottom-left corner, then "Check for updates", to see it straight away.
 
-Don't re-upload a different zip to an existing release: its fingerprint would no longer match,
-and updates would be refused. Make a new version number instead.
+## Doing it by hand (only if the workflow is broken)
+Run `build.cmd`, then on GitHub: Releases, Draft a new release, tag `v1.1.5`, and attach BOTH
+`SwatchSheet-1.1.5.zip` and `SwatchSheet-1.1.5.zip.sha256`. Without the fingerprint file the
+updater ignores the release on purpose.
+
+Never replace the zip on an existing release: its fingerprint would no longer match, and
+updates would be refused. Make a new version number instead.

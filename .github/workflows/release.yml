@@ -1,0 +1,59 @@
+# Makes a GitHub release whenever a push to main has a VERSION number that hasn't been released yet.
+# Pushes that don't change VERSION do nothing (beyond a quick check).
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Is this version new?
+        id: version
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $v = (Get-Content VERSION -Raw).Trim()
+          "version=$v" >> $env:GITHUB_OUTPUT
+          gh release view "v$v" *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "v$v is already released. Nothing to do."
+            "new=false" >> $env:GITHUB_OUTPUT
+          } else {
+            Write-Host "v$v isn't released yet. Building it."
+            "new=true" >> $env:GITHUB_OUTPUT
+          }
+          exit 0
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.version.outputs.new == 'true'
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Test and build
+        if: steps.version.outputs.new == 'true'
+        shell: pwsh
+        run: ./tools/make-release.ps1 -OutDir out
+
+      - name: Publish the release
+        if: steps.version.outputs.new == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $v = '${{ steps.version.outputs.version }}'
+          gh release create "v$v" "out/SwatchSheet-$v.zip" "out/SwatchSheet-$v.zip.sha256" `
+            --title "Swatch Sheet $v" --notes-file out/notes.md --target "$env:GITHUB_SHA"
