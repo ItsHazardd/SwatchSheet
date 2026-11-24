@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- All the color logic (sampling, rainbow sort, copy formats, saving) with no window code,
+       so it can be tested on its own. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>SwatchSheet.Core</RootNamespace>
+  </PropertyGroup>
+
+</Project>

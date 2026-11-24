@@ -1,0 +1,20 @@
+<Project>
+  <!-- One version for every project in the folder. The VERSION file is the source of truth. -->
+  <PropertyGroup>
+    <SwatchSheetVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</SwatchSheetVersion>
+    <Version>$(SwatchSheetVersion)</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Product>Swatch Sheet</Product>
+  </PropertyGroup>
+
+  <!-- If a "SwatchSheet Builds" folder sits next to this one, build files go there
+       so the source folder stays clean. Otherwise they go in the usual bin/obj. -->
+  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)..\SwatchSheet Builds')">
+    <SwatchSheetBuilds>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\SwatchSheet Builds'))\</SwatchSheetBuilds>
+    <BaseOutputPath>$(SwatchSheetBuilds)cache\bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(SwatchSheetBuilds)cache\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

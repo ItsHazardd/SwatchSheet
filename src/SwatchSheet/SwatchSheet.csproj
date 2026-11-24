@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Swatch Sheet window. WPF is built into .NET, so no outside libraries are needed. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>SwatchSheet.ico</ApplicationIcon>
+    <AssemblyName>SwatchSheet</AssemblyName>
+    <RootNamespace>SwatchSheet</RootNamespace>
+    <AssemblyTitle>Swatch Sheet - pick colors from images</AssemblyTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="SwatchSheet.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SwatchSheet.Core\SwatchSheet.Core.csproj" />
+  </ItemGroup>
+
+</Project>

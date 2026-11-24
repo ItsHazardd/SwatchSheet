@@ -1,0 +1,418 @@
+<Window x:Class="SwatchSheet.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Swatch Sheet" Width="1360" Height="840" MinWidth="980" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgBrush}" Foreground="{StaticResource TextBrush}"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13"
+        UseLayoutRounding="True" TextOptions.TextFormattingMode="Display"
+        Icon="SwatchSheet.ico"
+        AllowDrop="True" DragOver="Window_DragOver" Drop="Window_Drop"
+        PreviewKeyDown="Window_PreviewKeyDown" PreviewMouseDown="Window_PreviewMouseDown">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="ShowIf"/>
+    </Window.Resources>
+
+    <Grid x:Name="Root" Focusable="True" FocusVisualStyle="{x:Null}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="3"/>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <Rectangle Grid.Row="0" Fill="{StaticResource RainbowBrush}"/>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
+            <DockPanel Margin="16,0" LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Style="{StaticResource ToolButton}" Click="AddImages_Click" ToolTip="Open image files (Ctrl+O)">
+                        <TextBlock><Run Text="+" FontWeight="Bold"/><Run Text="  Add images"/></TextBlock>
+                    </Button>
+                    <Button Style="{StaticResource ToolButton}" Click="Paste_Click"
+                            ToolTip="Paste a screenshot or copied image, or hex codes copied from anywhere (Ctrl+V)">
+                        <TextBlock Text="Paste"/>
+                    </Button>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="SavePaletteButton" Style="{StaticResource ToolButton}" Click="SavePalette_Click"
+                            ToolTip="Save this sheet to the Palettes folder, named after its title (Ctrl+S)">
+                        <TextBlock Text="Save palette"/>
+                    </Button>
+                    <Button x:Name="PalettesButton" Style="{StaticResource ToolButton}" Click="Palettes_Click" Margin="0,0,22,0"
+                            ToolTip="Open one of your saved palettes">
+                        <TextBlock><Run Text="Palettes"/><Run Text="  &#x25BE;" Foreground="{StaticResource MutedBrush}"/></TextBlock>
+                    </Button>
+                    <Popup x:Name="PalettesPopup" PlacementTarget="{Binding ElementName=PalettesButton}" Placement="Bottom"
+                           VerticalOffset="6" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                        <Border Width="360" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                                CornerRadius="12" Padding="8" Margin="0,0,12,12">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.55" Color="Black"/>
+                            </Border.Effect>
+                            <DockPanel>
+                                <DockPanel DockPanel.Dock="Top" Margin="8,4,4,8">
+                                    <TextBlock x:Name="PaletteCountText" DockPanel.Dock="Right" Style="{StaticResource SectionLabel}"/>
+                                    <TextBlock Text="SAVED PALETTES" Style="{StaticResource SectionLabel}"/>
+                                </DockPanel>
+                                <Button DockPanel.Dock="Bottom" Style="{StaticResource ToolButton}" Click="OpenPaletteFolder_Click" Margin="2,6,2,2"
+                                        ToolTip="Show the Palettes folder in File Explorer" Content="Open Palettes folder"/>
+                                <Grid>
+                                    <ListBox x:Name="PaletteListBox" Background="Transparent" BorderThickness="0" Padding="0" MaxHeight="420"
+                                             ItemContainerStyle="{StaticResource PaletteRow}"
+                                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                             PreviewMouseLeftButtonUp="PaletteList_MouseUp">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel ToolTip="{Binding Tip}">
+                                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding Details}" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="0,1,0,6"/>
+                                                    <ItemsControl ItemsSource="{Binding Strip}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <StackPanel Orientation="Horizontal"/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Border Width="22" Height="14" CornerRadius="3" Margin="0,0,2,0" Background="{Binding}"
+                                                                        BorderBrush="#26FFFFFF" BorderThickness="1"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <TextBlock x:Name="PalettesEmpty" TextAlignment="Center" Foreground="{StaticResource MutedBrush}" Margin="10,22" LineHeight="20"
+                                               Text="No saved palettes yet.&#10;Give your sheet a title and click Save palette."/>
+                                </Grid>
+                            </DockPanel>
+                        </Border>
+                    </Popup>
+                    <Button Style="{StaticResource ToolButton}" Click="Fit_Click" ToolTip="Fit the image to the window (F)" Content="Fit"/>
+                    <Button Style="{StaticResource ToolButton}" Click="ActualSize_Click" ToolTip="Show real pixels (1)" Content="100%"/>
+                    <TextBlock x:Name="ZoomText" Width="52" TextAlignment="Right" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="206"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="420"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Images -->
+            <Border Grid.Column="0" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="16,14,14,10">
+                        <TextBlock x:Name="ImageCountText" DockPanel.Dock="Right" Style="{StaticResource SectionLabel}"/>
+                        <TextBlock Text="IMAGES" Style="{StaticResource SectionLabel}"/>
+                    </DockPanel>
+                    <Grid>
+                        <ListBox x:Name="ImageList" Background="Transparent" BorderThickness="0" Padding="0"
+                                 ItemContainerStyle="{StaticResource ImageItem}"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 SelectionChanged="ImageList_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel ToolTip="{Binding Tip}">
+                                        <Grid>
+                                            <Border CornerRadius="7" Height="104" Background="{StaticResource ViewerBrush}">
+                                                <Image Source="{Binding Thumb}" Stretch="Uniform" Margin="2" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                            </Border>
+                                            <Button Style="{StaticResource CloseButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="5"
+                                                    Tag="{Binding}" Click="RemoveImage_Click" ToolTip="Close this image (the file isn't touched)"/>
+                                        </Grid>
+                                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" Margin="2,6,2,0"/>
+                                        <TextBlock Text="{Binding SizeText}" Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="2,1,2,0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <TextBlock x:Name="ImagesEmpty" Text="No images yet.&#10;Drop some here,&#10;or click Add images." TextAlignment="Center"
+                                   Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,60"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!-- Image viewer -->
+            <Grid Grid.Column="1" x:Name="Viewer" Background="{StaticResource ViewerBrush}" ClipToBounds="True"
+                  MouseWheel="Viewer_MouseWheel" MouseLeftButtonDown="Viewer_MouseLeftButtonDown" MouseLeftButtonUp="Viewer_MouseLeftButtonUp"
+                  MouseRightButtonDown="Viewer_MouseRightButtonDown" MouseRightButtonUp="Viewer_MouseRightButtonUp"
+                  MouseMove="Viewer_MouseMove" MouseLeave="Viewer_MouseLeave" SizeChanged="Viewer_SizeChanged">
+                <Canvas x:Name="Stage">
+                    <Image x:Name="Picture" Stretch="Fill"/>
+                </Canvas>
+
+                <StackPanel x:Name="EmptyHint" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
+                    <Border Width="64" Height="6" CornerRadius="3" Background="{StaticResource RainbowBrush}" HorizontalAlignment="Center" Margin="0,0,0,22"/>
+                    <TextBlock Text="Drop images here" FontSize="24" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                    <TextBlock Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,10,0,0" FontSize="14"
+                               Text="or press Ctrl+O to browse, Ctrl+V to paste a screenshot"/>
+                    <TextBlock Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,26,0,0" TextAlignment="Center" LineHeight="22"
+                               Text="Click to pick a color  &#x00B7;  scroll to zoom  &#x00B7;  drag to move around"/>
+                </StackPanel>
+
+                <!-- Magnifier that follows the cursor -->
+                <Canvas x:Name="Overlay" IsHitTestVisible="False">
+                    <Border x:Name="Loupe" Visibility="Collapsed" Background="{StaticResource PanelBrush}" CornerRadius="12"
+                            BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="6">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.55" Color="Black"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <Border Width="154" Height="154">
+                                <Border.Clip>
+                                    <RectangleGeometry Rect="0,0,154,154" RadiusX="8" RadiusY="8"/>
+                                </Border.Clip>
+                                <Image x:Name="LoupeImage" Width="154" Height="154" RenderOptions.BitmapScalingMode="NearestNeighbor"/>
+                            </Border>
+                            <DockPanel Margin="2,7,2,1">
+                                <Border x:Name="LoupeSwatch" Width="18" Height="18" CornerRadius="4" BorderBrush="#40FFFFFF" BorderThickness="1" Margin="0,0,8,0"/>
+                                <TextBlock x:Name="LoupeRgb" DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}" FontSize="10.5" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="LoupeHex" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </Canvas>
+
+                <!-- "A new version is available" bar -->
+                <Border x:Name="UpdateBar" Visibility="Collapsed" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,16,0,0"
+                        Background="#F01D212A" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" CornerRadius="10" Padding="14,8,8,8">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.55" Color="Black"/>
+                    </Border.Effect>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Width="8" Height="8" CornerRadius="4" Background="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock x:Name="UpdateText" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                        <Button x:Name="WhatsNewButton" Style="{StaticResource ToolButton}" Click="WhatsNew_Click" Padding="10,5"
+                                ToolTip="Open the release page on GitHub" Content="What's new"/>
+                        <Button x:Name="UpdateNowButton" Style="{StaticResource ToolButton}" Click="UpdateNow_Click" Padding="12,5"
+                                Background="{StaticResource SelectedBrush}" BorderBrush="{StaticResource AccentBrush}"
+                                ToolTip="Download, check and install the new version, then restart. Your colors and palettes are kept.">
+                            <TextBlock Text="Update" FontWeight="SemiBold"/>
+                        </Button>
+                        <Button x:Name="NotNowButton" Style="{StaticResource ToolButton}" Click="NotNow_Click" Padding="10,5" Margin="0"
+                                ToolTip="Hide this until next time" Content="Not now"/>
+                    </StackPanel>
+                </Border>
+
+                <Border x:Name="Toast" Opacity="0" IsHitTestVisible="False" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,26"
+                        Background="#F01D212A" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="10" Padding="14,9">
+                    <StackPanel Orientation="Horizontal">
+                        <Border x:Name="ToastSwatch" Width="16" Height="16" CornerRadius="4" Margin="0,0,10,0" BorderBrush="#40FFFFFF" BorderThickness="1" Visibility="Collapsed"/>
+                        <TextBlock x:Name="ToastText" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Color sheet -->
+            <Border Grid.Column="2" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Margin="12,12,18,8">
+                        <DockPanel>
+                            <TextBlock x:Name="CountText" DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            <TextBox x:Name="TitleBox" Style="{StaticResource InlineTextBox}" Tag="Untitled sheet" FontSize="17" FontWeight="SemiBold"
+                                     MaxLength="80" TextChanged="SheetText_Changed" PreviewKeyDown="SheetText_PreviewKeyDown"
+                                     ToolTip="Click to name this sheet. It's the heading on the sheet image and when you paste into OneNote."/>
+                        </DockPanel>
+                        <DockPanel Margin="6,1,0,0">
+                            <CheckBox x:Name="ShowDateBox" DockPanel.Dock="Left" Style="{StaticResource TickBox}" IsChecked="True" Margin="0,0,4,0"
+                                      Checked="ShowDate_Changed" Unchecked="ShowDate_Changed"
+                                      ToolTip="Show the date on the sheet image and when you paste"/>
+                            <Button DockPanel.Dock="Right" Style="{StaticResource ToolButton}" Click="Today_Click" Padding="8,2" Margin="4,0,0,0"
+                                    FontSize="11" Foreground="{StaticResource MutedBrush}" ToolTip="Set the date to today" Content="Today"/>
+                            <TextBox x:Name="DateBox" Style="{StaticResource InlineTextBox}" Tag="Add a date..." FontSize="12"
+                                     Foreground="{StaticResource MutedBrush}" MaxLength="40"
+                                     TextChanged="SheetText_Changed" PreviewKeyDown="SheetText_PreviewKeyDown"
+                                     ToolTip="The sheet's date. Type anything you like, or click Today."/>
+                        </DockPanel>
+                        <TextBox x:Name="DescriptionBox" Style="{StaticResource InlineTextBox}" Tag="Add a description..." Margin="0,2,0,0"
+                                 Foreground="{StaticResource MutedBrush}" FontSize="12.5" MaxLength="500"
+                                 TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="76"
+                                 TextChanged="SheetText_Changed" PreviewKeyDown="SheetText_PreviewKeyDown"
+                                 ToolTip="Notes about this sheet. Shows under the title on the sheet image and in OneNote. Shift+Enter for a new line."/>
+                        <WrapPanel Margin="6,10,0,0">
+                            <Button x:Name="RainbowButton" Style="{StaticResource ToolButton}" Click="Rainbow_Click" Padding="8,7" Margin="0,0,4,0"
+                                    ToolTip="Sort the colors like a rainbow: red, orange, yellow, green, blue, indigo, violet. Greys go last. (R)">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Width="16" Height="10" CornerRadius="3" Background="{StaticResource RainbowBrush}" Margin="0,0,7,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Rainbow sort"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="AverageButton" Style="{StaticResource ToolButton}" Click="Average_Click" Padding="8,7" Margin="0,0,4,0"
+                                    ToolTip="Mix every color on the sheet into one and add it to the end (A)">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border x:Name="AverageChip" Width="12" Height="12" CornerRadius="6" Background="{StaticResource MutedBrush}" Margin="0,0,7,0"
+                                            VerticalAlignment="Center" BorderBrush="#40FFFFFF" BorderThickness="1"/>
+                                    <TextBlock Text="Average"/>
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="UndoButton" Style="{StaticResource ToolButton}" Click="Undo_Click" ToolTip="Undo (Ctrl+Z)" Content="Undo" Padding="8,7" Margin="0,0,4,0"/>
+                            <Button x:Name="RedoButton" Style="{StaticResource ToolButton}" Click="Redo_Click" ToolTip="Redo (Ctrl+Y)" Content="Redo" Padding="8,7" Margin="0,0,4,0"/>
+                            <Button x:Name="ClearButton" Style="{StaticResource ToolButton}" Click="Clear_Click" ToolTip="Remove every color (can be undone)" Content="Clear" Padding="8,7" Margin="0"/>
+                        </WrapPanel>
+                    </StackPanel>
+
+                    <!-- Copy panel, pinned to the bottom -->
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0" Padding="18,12,18,16">
+                        <StackPanel>
+                            <DockPanel>
+                                <TextBlock Text="COPY" Style="{StaticResource SectionLabel}" VerticalAlignment="Center"/>
+                                <Border Background="{StaticResource Panel2Brush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8" HorizontalAlignment="Right">
+                                    <StackPanel Orientation="Horizontal">
+                                        <RadioButton x:Name="FormatHex" Style="{StaticResource SegmentRadio}" GroupName="Format" Content="Hex" IsChecked="True" Checked="Format_Checked" Padding="9,4"/>
+                                        <RadioButton x:Name="FormatCss" Style="{StaticResource SegmentRadio}" GroupName="Format" Content="CSS" Checked="Format_Checked" Padding="9,4"/>
+                                        <RadioButton x:Name="FormatRgb" Style="{StaticResource SegmentRadio}" GroupName="Format" Content="RGB" Checked="Format_Checked" Padding="9,4"/>
+                                    </StackPanel>
+                                </Border>
+                            </DockPanel>
+
+                            <!-- Preview of exactly what will be copied, with the colors shown -->
+                            <Border Background="{StaticResource ViewerBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" CornerRadius="8" Margin="0,10,0,0" Height="128">
+                                <Grid>
+                                    <ScrollViewer x:Name="PreviewScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="10,8,4,8">
+                                        <ItemsControl x:Name="PreviewList">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <ItemsControl ItemsSource="{Binding Segments}" Margin="0,1">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate>
+                                                                <WrapPanel/>
+                                                            </ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel Orientation="Horizontal" Margin="0,1">
+                                                                    <Border Width="26" Height="13" CornerRadius="3" Background="{Binding Chip}" Margin="0,0,7,0" VerticalAlignment="Center"
+                                                                            BorderBrush="#30FFFFFF" BorderThickness="1" Visibility="{Binding HasChip, Converter={StaticResource ShowIf}}"/>
+                                                                    <TextBlock x:Name="PreviewText" Text="{Binding Text}" FontFamily="{StaticResource MonoFont}" FontSize="12" VerticalAlignment="Center"
+                                                                               TextWrapping="Wrap" MaxWidth="320"/>
+                                                                </StackPanel>
+                                                                <DataTemplate.Triggers>
+                                                                    <DataTrigger Binding="{Binding Bold}" Value="True">
+                                                                        <Setter TargetName="PreviewText" Property="FontFamily" Value="Segoe UI"/>
+                                                                        <Setter TargetName="PreviewText" Property="FontWeight" Value="Bold"/>
+                                                                        <Setter TargetName="PreviewText" Property="FontSize" Value="13.5"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Muted}" Value="True">
+                                                                        <Setter TargetName="PreviewText" Property="FontFamily" Value="Segoe UI"/>
+                                                                        <Setter TargetName="PreviewText" Property="Foreground" Value="{StaticResource MutedBrush}"/>
+                                                                    </DataTrigger>
+                                                                </DataTemplate.Triggers>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                    <TextBlock x:Name="PreviewEmpty" Text="Pick some colors to see them here." Foreground="{StaticResource MutedBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Border>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="CopyButton" Grid.Column="0" Style="{StaticResource ToolButton}" Click="Copy_Click" Margin="0,0,4,0"
+                                        Background="{StaticResource SelectedBrush}" BorderBrush="{StaticResource AccentBrush}" Padding="10,9"
+                                        ToolTip="Copies the codes above. OneNote, Word and Google Docs paste them with a color block; Notepad and Discord get plain codes. (Ctrl+C)">
+                                    <TextBlock Text="Copy colors" FontWeight="SemiBold"/>
+                                </Button>
+                                <Button x:Name="CopyImageButton" Grid.Column="1" Style="{StaticResource ToolButton}" Click="CopyImage_Click" Margin="4,0,0,0" Padding="10,9"
+                                        ToolTip="Copies the whole sheet as a picture, ready to paste into OneNote, Discord, Paint... (Ctrl+Shift+C)">
+                                    <TextBlock Text="Copy sheet image"/>
+                                </Button>
+                            </Grid>
+                            <TextBlock Text="Pastes with color blocks in OneNote, Word and Docs." Foreground="{StaticResource MutedBrush}" FontSize="11" Margin="2,8,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- The swatches -->
+                    <Grid>
+                        <ScrollViewer x:Name="SwatchScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="12,0,4,10">
+                            <ItemsControl x:Name="SwatchList">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border x:Name="Card" Width="112" Margin="3" Padding="6" CornerRadius="10" Cursor="Hand"
+                                                Background="{StaticResource Panel2Brush}" BorderBrush="Transparent" BorderThickness="2"
+                                                Tag="{Binding}" ToolTip="{Binding Tip}" AllowDrop="True"
+                                                MouseLeftButtonDown="Swatch_MouseLeftButtonDown" MouseMove="Swatch_MouseMove" MouseLeftButtonUp="Swatch_MouseLeftButtonUp"
+                                                DragOver="Swatch_DragOver" DragLeave="Swatch_DragLeave" Drop="Swatch_Drop">
+                                            <StackPanel>
+                                                <Grid>
+                                                    <Border Height="66" CornerRadius="7" Background="{Binding Brush}" BorderBrush="#26FFFFFF" BorderThickness="1"/>
+                                                    <Button x:Name="RemoveButton" Style="{StaticResource CloseButton}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="4"
+                                                            Tag="{Binding}" Click="RemoveSwatch_Click" ToolTip="Remove from the sheet" Visibility="Hidden"/>
+                                                </Grid>
+                                                <TextBlock Text="{Binding Hex}" FontFamily="{StaticResource MonoFont}" FontWeight="SemiBold" Margin="2,7,0,0"/>
+                                                <TextBlock Text="{Binding RgbShort}" Foreground="{StaticResource MutedBrush}" FontSize="10.5" Margin="2,1,0,1"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <DataTemplate.Triggers>
+                                            <Trigger SourceName="Card" Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="RemoveButton" Property="Visibility" Value="Visible"/>
+                                                <Setter TargetName="Card" Property="Background" Value="{StaticResource HoverBrush}"/>
+                                            </Trigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                        <TextBlock x:Name="SheetEmpty" TextAlignment="Center" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" LineHeight="21"
+                                   Text="Click anywhere on an image&#10;to add its color here.&#10;&#10;Drag swatches to reorder them."/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- Status bar -->
+        <Border Grid.Row="3" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,1,0,0">
+            <DockPanel Margin="16,0">
+                <TextBlock DockPanel.Dock="Right" Foreground="{StaticResource MutedBrush}" FontSize="11.5" VerticalAlignment="Center"
+                           Text="Ctrl+Z undo  &#x00B7;  R rainbow sort  &#x00B7;  A average  &#x00B7;  Ctrl+C copy colors  &#x00B7;  Ctrl+S save palette  &#x00B7;  F fit"/>
+                <Button x:Name="VersionButton" DockPanel.Dock="Left" Style="{StaticResource ToolButton}" Click="Version_Click"
+                        Background="Transparent" BorderThickness="0" Padding="6,2" Margin="-6,0,10,0" FontSize="11.5"
+                        Foreground="{StaticResource MutedBrush}" ToolTip="Version and updates"/>
+                <Popup x:Name="AboutPopup" PlacementTarget="{Binding ElementName=VersionButton}" Placement="Top" VerticalOffset="-6"
+                       StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade">
+                    <Border Width="300" Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1"
+                            CornerRadius="12" Padding="16,14" Margin="0,12,12,0">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.55" Color="Black"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <TextBlock x:Name="AboutTitle" FontSize="15" FontWeight="SemiBold"/>
+                            <TextBlock Text="Free and open source." Foreground="{StaticResource MutedBrush}" FontSize="11.5" Margin="0,2,0,12"/>
+                            <Button x:Name="CheckUpdatesButton" Style="{StaticResource ToolButton}" Click="CheckUpdates_Click" Margin="0"
+                                    HorizontalAlignment="Left" Content="Check for updates"/>
+                            <TextBlock x:Name="UpdateStatusText" Foreground="{StaticResource MutedBrush}" FontSize="11.5" TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Visibility="Collapsed"/>
+                            <DockPanel Margin="0,12,0,0">
+                                <CheckBox x:Name="AutoUpdateBox" Style="{StaticResource TickBox}" DockPanel.Dock="Left" Margin="0,0,8,0"
+                                          Checked="AutoUpdate_Changed" Unchecked="AutoUpdate_Changed"/>
+                                <TextBlock Text="Check when the app opens (once a day). Only asks GitHub for the newest version number."
+                                           TextWrapping="Wrap" FontSize="11.5" Foreground="{StaticResource MutedBrush}"/>
+                            </DockPanel>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+                <TextBlock x:Name="StatusText" Foreground="{StaticResource MutedBrush}" FontSize="11.5" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+    </Grid>
+</Window>
