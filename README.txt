@@ -101,7 +101,3 @@ Everything stays next to the program, so you can move the folder to another PC:
 If that folder can't be written to, they go to %LOCALAPPDATA%\Swatch Sheet instead.
 Sending the program to someone? Send just SwatchSheet.exe and this README. Keep your own
 data and Palettes folders, unless you want to share them.
-
-IF SOMETHING GOES WRONG
------------------------
-An error window pops up with a "Copy error" button. Click it and paste the details to get help.
